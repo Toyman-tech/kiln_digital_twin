@@ -1,7 +1,13 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { INITIAL_ZONES, KilnZone, calculateRSS, calculateWearThickness } from "@/utils/mockData";
+import { 
+  INITIAL_ZONES, 
+  KilnZone, 
+  calculateRSS, 
+  calculateWearThickness, 
+  calculateChemFactor 
+} from "@/utils/mockData";
 import KilnModel from "@/components/KilnModel";
 import RiskEngine from "@/components/RiskEngine";
 import TelemetrySim from "@/components/TelemetrySim";
@@ -30,11 +36,6 @@ export default function KilnGuardDashboard() {
   const [activeTab, setActiveTab] = useState<"overview" | "alerts" | "hardware">("overview");
   const [isSimulating, setIsSimulating] = useState<boolean>(true);
   const [rpm, setRpm] = useState<number>(3.5);
-  const [weights, setWeights] = useState({
-    wSpike: 0.35,
-    wCycle: 0.45,
-    wChem: 0.20,
-  });
 
   const selectedZone = zones.find((z) => z.id === selectedZoneId) || zones[0];
 
@@ -58,7 +59,7 @@ export default function KilnGuardDashboard() {
         } else {
           // Recover nominal temperature based on zone
           updatedTemp = zoneId === 3 ? 1390 : zoneId === 1 ? 840 : 1150;
-          updatedRSS = calculateRSS(z.tSpike, z.tCycle, z.chemFactor);
+          updatedRSS = calculateRSS(z.tSpike, z.tCycle, z.chemFactor, z.weights);
         }
 
         const baseThick = zoneId === 3 ? 210 : zoneId === 2 || zoneId === 4 ? 230 : 250;
@@ -78,7 +79,7 @@ export default function KilnGuardDashboard() {
   const handleRefreshData = () => {
     setZones(INITIAL_ZONES.map(z => ({
       ...z,
-      rss: calculateRSS(z.tSpike, z.tCycle, z.chemFactor)
+      rss: calculateRSS(z.tSpike, z.tCycle, z.chemFactor, z.weights)
     })));
   };
 
@@ -136,15 +137,23 @@ export default function KilnGuardDashboard() {
             newCycleFactor = Math.max(0, zone.tCycle - Math.round(Math.random() * 0.8));
           }
 
-          // 4. Infiltration Chemical Factor fluctuations (alternative fuel chemical composition variations)
-          const chemShift = (Math.random() - 0.5) * 2.5;
-          const newChemFactor = Math.min(100, Math.max(0, Math.round(zone.chemFactor + chemShift)));
+          // 4. Infiltration Chemistry sub-model fluctuations
+          // Minor daily chemistry drifts on raw inputs: Cl (wt%), S (wt%), Alkali (wt%)
+          const clDrift = (Math.random() - 0.5) * 0.02;
+          const sDrift = (Math.random() - 0.5) * 0.04;
+          const alkDrift = (Math.random() - 0.5) * 0.03;
+          
+          const newCl = Math.max(0.01, Math.round((zone.chlorine + clDrift) * 100) / 100);
+          const newS = Math.max(0.01, Math.round((zone.sulfur + sDrift) * 100) / 100);
+          const newAlk = Math.max(0.01, Math.round((zone.alkali + alkDrift) * 100) / 100);
+          
+          const newChemFactor = calculateChemFactor(newCl, newS, newAlk);
 
-          // 5. Calculate new RSS using active weight calibration
+          // 5. Calculate new RSS using zone-specific weights
           const newRSS = Math.round(
-            (weights.wSpike * newSpike) +
-            (weights.wCycle * newCycleFactor) +
-            (weights.wChem * newChemFactor)
+            (zone.weights.wSpike * newSpike) +
+            (zone.weights.wCycle * newCycleFactor) +
+            (zone.weights.wChem * newChemFactor)
           );
 
           // 6. Estimate remaining brick refractory thickness
@@ -157,6 +166,9 @@ export default function KilnGuardDashboard() {
             tSpike: newSpike,
             tCycle: newCycleFactor,
             cycleCount: newCycleCount,
+            chlorine: newCl,
+            sulfur: newS,
+            alkali: newAlk,
             chemFactor: newChemFactor,
             rss: newRSS,
             wearThickness: remainingThickness,
@@ -168,7 +180,7 @@ export default function KilnGuardDashboard() {
     }, 2000);
 
     return () => clearInterval(interval);
-  }, [isSimulating, weights]);
+  }, [isSimulating]);
 
   // Sync initial RSS scores on mount
   useEffect(() => {
@@ -355,8 +367,6 @@ export default function KilnGuardDashboard() {
                   <RiskEngine
                     selectedZone={selectedZone}
                     onUpdateZone={handleUpdateZone}
-                    weights={weights}
-                    onUpdateWeights={setWeights}
                   />
                 </div>
                 {/* Wear curves charts (right) */}

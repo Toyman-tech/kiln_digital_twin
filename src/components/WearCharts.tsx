@@ -47,8 +47,22 @@ export default function WearCharts({ selectedZone }: WearChartsProps) {
 
   // Generate historical data based on current stress values
   const allHistory = useMemo(() => {
-    return generateHistoryData(selectedZone.id, selectedZone.rss);
-  }, [selectedZone.id, selectedZone.rss]);
+    return generateHistoryData(
+      selectedZone.id, 
+      selectedZone.rss, 
+      selectedZone.weights,
+      selectedZone.chlorine,
+      selectedZone.sulfur,
+      selectedZone.alkali
+    );
+  }, [
+    selectedZone.id, 
+    selectedZone.rss, 
+    selectedZone.weights, 
+    selectedZone.chlorine, 
+    selectedZone.sulfur, 
+    selectedZone.alkali
+  ]);
 
   // Filter history based on time range selected
   const historyData = useMemo(() => {

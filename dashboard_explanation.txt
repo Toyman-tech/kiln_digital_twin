@@ -1,0 +1,145 @@
+================================================================================
+KILNGUARD DIGITAL TWIN & PREDICTIVE REFRACTORY SYSTEM
+TECHNICAL DOCUMENTATION & SYSTEM EXPLANATION
+================================================================================
+Target Site: Dangote Cement Plc - Obajana Plant, Kiln 3 (Active Pilot)
+Purpose: Predictive refractory lining wear estimation and shell hotspot prevention.
+Created on: 2026-07-04
+================================================================================
+
+1. INTRODUCTION & INDUSTRIAL CONTEXT
+--------------------------------------------------------------------------------
+Rotary kilns are the heart of cement manufacturing plants, operating at internal 
+temperatures of up to 1450°C to 2000°C. To protect the outer steel shell from 
+melting or warping, kilns are lined internally with high-performance refractory 
+bricks. 
+
+Unplanned kiln stops due to refractory brick failure (spalling) or shell hotspot 
+deformations can cost millions of Naira per day in production downtime and maintenance 
+fees. KilnGuard provides a "Digital Twin" early-warning interface, substituting 
+reactive, manual inspections with continuous mathematical stress forecasting 
+and Edge-to-ERP integration.
+
+Additionally, this dashboard supports Dangote's "Alternative Fuel (AF)" drive. 
+Using waste materials as fuel introduces chemicals (sulfur, chlorine) that accelerate 
+brick corrosion. KilnGuard tracks these chemical mixes explicitly via telemetry.
+
+
+2. DASHBOARD ARCHITECTURE & LAYOUT
+--------------------------------------------------------------------------------
+The application is structured into a multi-section console using a responsive left 
+sidebar navigation menu:
+
+- SECTION A: OVERVIEW DASHBOARD
+  The primary pilot view containing the horizontal 3D-like kiln schematic, the 
+  circular lining cross-section inspector, active telemetry parameter controls, 
+  and historical analytics charts.
+  
+- SECTION B: SAP PM ALERT CENTER
+  An escalation workflow panel showing draft and dispatched maintenance work orders. 
+  Provides filtering tools and a dispatch configuration window to assign teams 
+  directly to the plant's SAP ERP.
+  
+- SECTION C: ESP32 HARDWARE RIG
+  A diagnostic layout simulating edge nodes. Illustrates a vector diagram of the 
+  microcontroller board with flashing active LEDs and a color-coded MQTT stream 
+  showing JSON packages in real-time.
+
+
+3. THE MATHEMATICAL STRESS MODEL (RSS)
+--------------------------------------------------------------------------------
+Refractory brick spalling and degradation are calculated continuously by the 
+dashboard using the Refractory Stress Score (RSS) formula:
+
+    RSS = (wSpike * T_Spike) + (wCycle * T_Cycle) + (wChem * Chem_Factor)
+
+Where:
+- T_Spike (Temperature Spike Index): 
+  Calculated based on the duration and magnitude of temperature excursions above 
+  nominal limits (e.g., shell temperature exceeding 1300°C for the Burning Zone).
+  
+- T_Cycle (Thermal Cycling Index): 
+  Tracks rapid cooling rates (temperature drop exceeding 50°C per hour) which 
+  cause thermal shock and physical cracking of the bricks.
+  
+- Chem_Factor (Chemical Infiltration Index): 
+  Measures trace sulfur, chlorine, and alkali deposition from Alternative Fuel mix 
+  burning, which chemically corrodes porous brick structures.
+
+- wSpike, wCycle, wChem (Model Weights):
+  Engineers can adjust these coefficients inside the "Calibrate" panel to tune the 
+  mathematical engine. Nominally, these are set to wSpike=35%, wCycle=45%, and wChem=20%.
+
+WEAR THICKNESS FORMULA:
+Refractory bricks degrade from their nominal starting thickness based on the 
+accumulated RSS stress score:
+
+    Remaining Lining = Base Thickness - ((RSS / 100) * 170mm)
+
+- Nominal starting thicknesses are configured by zone:
+  * Burning Zone: 210mm (historically thinner lining due to extreme heat)
+  * Transition Zones: 230mm
+  * Calcining & Cooling Zones: 250mm
+- A critical alarm is triggered whenever the estimated brick lining drops 
+  below 120mm, indicating high danger of shell hotspot exposure.
+
+
+4. INDIVIDUAL COMPONENTS EXPLAINED
+--------------------------------------------------------------------------------
+A. DIGITAL TWIN SHELL PROFILE (KilnModel.tsx)
+   - Left Panel: Displays the horizontal kiln cylinder. It rotates on screen at a 
+     frequency synced to the kiln speed (RPM) telemetry. Five separate zones are 
+     color-coded (Green = Safe, Yellow/Orange = Warning, Red = Critical stress).
+   - Right Panel (Lining Cross-Section): Generates a circular cutout representing the 
+     selected zone. An outer steel circle represents the kiln shell, an inner ring 
+     represents the refractory bricks (dynamically scaling in thickness and matching 
+     zone colors in real-time), and the center features a glowing furnace fire core.
+
+B. CALIBRATION & SLIDERS (RiskEngine.tsx)
+   - Displays circular SVG progress gauges illustrating RSS and Lining Thickness.
+   - Provides sliders to override/simulate Spike, Cycle, and Chemical factor inputs.
+   - Features a coefficient calibrator to modify weight coefficients (wSpike, etc.).
+
+C. HISTORICAL WEAR ANALYTICS (WearCharts.tsx)
+   - Graph 1 (Lining Thickness Trend): Tracks brick thickness over a 30, 60, or 90-day 
+     history using a custom glowing neon-blue Recharts line.
+   - Graph 2 (Fuel Index vs Stress Correlation): Uses stacked area charts to plot 
+     historical Alternative Fuel chemical mixes against refractory stress.
+   - Includes custom, responsive HTML tooltips rendering detailed text readouts.
+
+D. ESP32 HARDWARE RIG SIMULATOR (TelemetrySim.tsx)
+   - Visualizes a physical ESP32-WROOM-32 micro-controller board in SVG:
+     * Red LED (PWR): Steady glow indicating board power.
+     * Orange LED (TX): Flashes every 1.5 seconds when streaming telemetry.
+     * Cyan LED (FAULT): Glows when sensor open circuits are triggered.
+   - JSON Feed Console: A syntax-colored terminal displaying actual MQTT packets 
+     broadcast by the edge node, colorizing keys, numeric parameters, and status tags.
+   - Fault Injection: Allows operators to toggle "OPEN CIRCUIT FAULT", simulating a 
+     broken thermocouple wire. The node starts broadcasting a default "-1°C" temperature, 
+     instantly tripping the dashboard's safety alarms.
+
+E. SAP PM ALERTS ESCALATION (AlertCenter.tsx)
+   - Monitors zone conditions and generates drafts of work orders for worn assets.
+   - Search & Filters: Lets console operators search by zone names or filter by status 
+     (All, Draft, Dispatched).
+   - SAP ERP Dispatch Modal: Clicking "Approve & Dispatch SAP" opens a configuration window:
+     * Assigns a specific technician crew.
+     * Selects priority codes (LOW, MEDIUM, HIGH, EMERGENCY).
+     * Appends custom directive text logs.
+   - Once dispatched, the work order locks, marks itself as "DISPATCHED TO SAP PM ERP", 
+     and displays the logged technician directive info.
+
+
+5. BROWSER & COMPILATION ROBUSTNESS
+--------------------------------------------------------------------------------
+- MetaMask Rejection Bypass: 
+  Chrome browsers running wallet extensions like MetaMask frequently experience 
+  unhandled promise rejections on load because the extension tries to initialize its 
+  in-page script before connecting to its background process. KilnGuard's main layout 
+  uses a global interception handler that detects MetaMask's errors and prevents them 
+  from triggering Next.js dev server error overlays.
+  
+- Clean Next.js configuration:
+  Removed obsolete tracing options in `next.config.ts` to ensure 100% clean, error-free 
+  TypeScript checking and static page pre-rendering.
+================================================================================

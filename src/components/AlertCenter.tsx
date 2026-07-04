@@ -21,7 +21,35 @@ interface WorkOrder {
 }
 
 export default function AlertCenter({ zones }: AlertCenterProps) {
-  const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
+  const [workOrders, setWorkOrders] = useState<WorkOrder[]>([
+    {
+      id: "WO-DCP-8721",
+      zoneName: "Burning Zone",
+      severity: "CRITICAL",
+      description: "CRITICAL: Hot spot detected on shell at 27m–45m. Refractory Stress is 78%. Remaining lining thin (108mm). Schedule cooling profile and initiate immediate ultrasonic lining scans.",
+      status: "DRAFT",
+      createdAt: "10:14:05 AM"
+    },
+    {
+      id: "WO-DCP-5412",
+      zoneName: "Upper Transition Zone",
+      severity: "WARNING",
+      description: "WARNING: Accelerated refractory wear in Upper Transition Zone. Remaining thickness estimated at 215mm. Schedule visual shell inspection during next outage.",
+      status: "DISPATCHED",
+      createdAt: "09:42:18 AM",
+      technician: "Inspector Aliyu Ibrahim",
+      priority: "HIGH",
+      notes: "Carry out manual shell probe check on line 12."
+    },
+    {
+      id: "WO-DCP-3091",
+      zoneName: "Lower Transition Zone",
+      severity: "WARNING",
+      description: "WARNING: Accelerated refractory wear in Lower Transition Zone. Remaining thickness estimated at 172mm. Schedule visual shell inspection during next outage.",
+      status: "DRAFT",
+      createdAt: "08:15:33 AM"
+    }
+  ]);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<"ALL" | "DRAFT" | "DISPATCHED">("ALL");
   const [activeDispatchWo, setActiveDispatchWo] = useState<WorkOrder | null>(null);
