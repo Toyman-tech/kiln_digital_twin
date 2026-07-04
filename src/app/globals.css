@@ -1,0 +1,120 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --background: #060814;
+    --foreground: #f8fafc;
+    --card: rgba(15, 23, 42, 0.45);
+    --card-hover: rgba(30, 41, 59, 0.6);
+    --border: rgba(148, 163, 184, 0.08);
+    --border-glow: rgba(56, 189, 248, 0.2);
+    --accent: #38bdf8;
+    --accent-glow: rgba(56, 189, 248, 0.4);
+    --warning: #f59e0b;
+    --critical: #ef4444;
+    --safe: #10b981;
+  }
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.07) 0px, transparent 50%),
+    radial-gradient(at 50% 0%, rgba(99, 102, 241, 0.05) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(239, 68, 68, 0.03) 0px, transparent 50%),
+    linear-gradient(rgba(15, 23, 42, 0.5) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 23, 42, 0.5) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+  background-attachment: fixed;
+  overflow-x: hidden;
+}
+
+/* Glassmorphism panel styles */
+.glass-panel {
+  background: var(--card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-panel:hover {
+  border-color: rgba(56, 189, 248, 0.15);
+  background: var(--card-hover);
+  box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.5);
+}
+
+.glass-panel-glow {
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  box-shadow: 0 0 25px rgba(56, 189, 248, 0.15);
+}
+
+/* Real-time terminal payload feed styling */
+.terminal-glow {
+  text-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+}
+
+/* Cybernetic grid scanline effect */
+.scanline {
+  background: linear-gradient(
+    to bottom,
+    rgba(255,255,255,0),
+    rgba(255,255,255,0) 50%,
+    rgba(56, 189, 248, 0.04) 50%,
+    rgba(56, 189, 248, 0.04)
+  );
+  background-size: 100% 4px;
+}
+
+/* Local glow animations for the kiln twin hot zones */
+@keyframes thermalPulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 2px currentColor);
+  }
+  50% {
+    filter: drop-shadow(0 0 12px currentColor);
+  }
+}
+
+.thermal-glow-animate {
+  animation: thermalPulse 2s infinite ease-in-out;
+}
+
+@keyframes progress-loading {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.shimmer-progress {
+  animation: progress-loading 2s infinite linear;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.5);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(56, 189, 248, 0.3);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(56, 189, 248, 0.5);
+}
